@@ -1,29 +1,25 @@
-'use client';
-
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { X, Eye } from 'lucide-react';
-import { useAtom } from 'jotai';
-import { selectedStarshipsAtom } from '@/store/starship';
-import type { Starship } from '@/lib/api';
-import { motion, AnimatePresence } from 'framer-motion';
+'use client'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
+import { X, Eye } from 'lucide-react'
+import { useAtom } from 'jotai'
+import { selectedStarshipsAtom } from '@/store/starship'
+import type { Starship } from '@/lib/api'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface SelectedStarshipsBarProps {
-  onCompare: () => void;
+  onCompare: () => void
 }
 export function SelectedStarshipsBar({ onCompare }: SelectedStarshipsBarProps) {
-  const [selectedStarships, setSelectedStarships] = useAtom(selectedStarshipsAtom);
+  const [selectedStarships, setSelectedStarships] = useAtom(selectedStarshipsAtom)
 
   const removeStarship = (starshipToRemove: Starship) => {
-    setSelectedStarships(prev => 
-      prev.filter(starship => starship.url !== starshipToRemove.url)
-    );
-  };
-  const clearAll = () => {
-    setSelectedStarships([]);
-  };
-  if (selectedStarships.length === 0) return null;
+    setSelectedStarships(prev => prev.filter(s => s.url !== starshipToRemove.url))
+  }
+  const clearAll = () => setSelectedStarships([])
+
+  if (selectedStarships.length === 0) return null
 
   return (
     <AnimatePresence>
@@ -31,37 +27,28 @@ export function SelectedStarshipsBar({ onCompare }: SelectedStarshipsBarProps) {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 50 }}
-        className="fixed bottom-4 left-4 right-4 z-50"
+        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+        className="fixed left-3 right-3 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-50"
       >
-        <Card className="p-4 shadow-lg bg-white border">
-          <div className="flex items-center justify-between gap-4">
+        <Card className="p-3 sm:p-4 shadow-lg bg-card text-card-foreground border border-border">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium">Selected for comparison:</span>
-                <Badge variant="secondary">
-                  {selectedStarships.length}/3
-                </Badge>
+                <span className="text-xs sm:text-sm font-medium">Selected for comparison:</span>
+                <Badge variant="secondary" className="text-xs">{selectedStarships.length}/3</Badge>
               </div>
-              
-              <div className="flex flex-wrap gap-2">
-                {selectedStarships.map((starship) => (
-                  <motion.div
-                    key={starship.url}
-                    layout
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                  >
-                    <Badge
-                      variant="outline"
-                      className="pr-1 max-w-[200px] truncate"
-                    >
+
+              <div className="flex gap-2 overflow-x-auto no-scrollbar snap-x pr-1" role="list" aria-label="Selected starships">
+                {selectedStarships.map(starship => (
+                  <motion.div key={starship.url} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="snap-start">
+                    <Badge variant="secondary" className="pr-1 max-w-[220px] sm:max-w-[260px] truncate">
                       {starship.name}
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-4 w-4 p-0 ml-1 hover:bg-destructive hover:text-destructive-foreground"
                         onClick={() => removeStarship(starship)}
+                        aria-label={`Remove ${starship.name}`}
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -70,19 +57,12 @@ export function SelectedStarshipsBar({ onCompare }: SelectedStarshipsBarProps) {
                 ))}
               </div>
             </div>
-            
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearAll}
-              >
+
+            <div className="flex items-center gap-2 sm:justify-end">
+              <Button variant="outline" size="sm" onClick={clearAll} className="flex-1 sm:flex-none">
                 Clear All
               </Button>
-              <Button
-                onClick={onCompare}
-                className="gap-2"
-              >
+              <Button onClick={onCompare} className="gap-2 flex-1 sm:flex-none">
                 <Eye className="h-4 w-4" />
                 Compare
               </Button>
@@ -91,5 +71,5 @@ export function SelectedStarshipsBar({ onCompare }: SelectedStarshipsBarProps) {
         </Card>
       </motion.div>
     </AnimatePresence>
-  );
+  )
 }
