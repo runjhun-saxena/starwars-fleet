@@ -1,12 +1,16 @@
-'use client'
-import { useState, useRef, useEffect } from 'react';
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
 import {
   searchAtom,
   hyperdriveFilterAtom,
   crewFilterAtom,
+  selectedStarshipsAtom,
+  selectedUrlsAtom,
 } from '@/store/starship';
 import { useStarships } from '@/hooks/use-starship';
+import { useRestoreFromUrl, useSyncUrl, setSheetInUrl } from '@/hooks/use-sync-url';
 import { SearchInput } from '@/components/search-input';
 import { HyperdriveFilter, CrewFilter } from '@/components/filter';
 import { StarshipsTable } from '@/components/starship-table';
@@ -14,36 +18,78 @@ import { ComparisonSheet } from '@/components/comparison-sheet';
 import { SelectedStarshipsBar } from '@/components/selected-starship';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export default function DashboardPage() {
   const [search, setSearch] = useAtom(searchAtom);
   const [hyperdriveFilter, setHyperdriveFilter] = useAtom(hyperdriveFilterAtom);
   const [crewFilter, setCrewFilter] = useAtom(crewFilterAtom);
+  const [selectedStarships, setSelectedStarships] = useAtom(selectedStarshipsAtom);
+  const [selectedUrls, setSelectedUrls] = useAtom(selectedUrlsAtom);
+
+ 
+  useRestoreFromUrl();
+
   const [showComparison, setShowComparison] = useState(false);
+  const pathname = usePathname();
+  const router   = useRouter();
+  const sp       = useSearchParams();
+
+  useEffect(() => {
+    setShowComparison(sp.get('sheet') === '1');
+  }, []);
+
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    status,
+    isPending,
+    isError,
   } = useStarships({ search, hyperdriveFilter, crewFilter });
+
+  // Flatten pages
   const starships = data?.pages.flatMap((p) => p.results) ?? [];
+  useEffect(() => {
+    if (!starships.length) return;
+
+    const dict = new Map(starships.map((s) => [s.url, s]));
+    const hydrated = selectedUrls
+      .map((u) => dict.get(u))
+      .filter(Boolean)
+      .slice(0, 3) as typeof starships;
+    const oldUrls = selectedStarships.map((s) => s.url).join('|');
+    const newUrls = hydrated.map((s) => s.url).join('|');
+    if (oldUrls !== newUrls) {
+      setSelectedStarships(hydrated);
+    }
+  }, [starships, selectedUrls, selectedStarships, setSelectedStarships]);
+
+  // Push atoms URL (search, filters, sort, selected)
+  useSyncUrl();
+
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!loadMoreRef.current) return;
-    const observer = new IntersectionObserver(
+    const ob = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage) {
-          fetchNextPage();
-        }
+        if (entries[0].isIntersecting && hasNextPage) fetchNextPage();
       },
       { threshold: 1 }
     );
-    observer.observe(loadMoreRef.current);
-    return () => observer.disconnect();
+    ob.observe(loadMoreRef.current);
+    return () => ob.disconnect();
   }, [fetchNextPage, hasNextPage]);
+
+  const openSheet = () => {
+    setShowComparison(true);
+    setSheetInUrl(true, sp, pathname, router);
+  };
+  const closeSheet = () => {
+    setShowComparison(false);
+    setSheetInUrl(false, sp, pathname, router);
+  };
 
   const resetFilters = () => {
     setSearch('');
@@ -51,18 +97,14 @@ export default function DashboardPage() {
     setCrewFilter('all');
   };
 
-  if (status === 'error') {
+  if (isError) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg bg-card text-card-foreground border border-border">
+        <Card className="w-full max-w-lg">
           <CardContent className="pt-6">
-            <div className="text-center">
-              <Rocket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Connection Error</h3>
-              <p className="text-muted-foreground mb-4">
-                Unable to connect to the Star Wars API. This might be due to CORS or network issues.
-              </p>
-            </div>
+            <p className="text-center text-muted-foreground">
+              Failed to load starships. Please try again.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -85,6 +127,7 @@ export default function DashboardPage() {
             <ThemeToggle />
           </div>
         </div>
+
         <Card className="mb-4 sm:mb-6">
           <CardHeader className="pb-0">
             <CardTitle className="text-base sm:text-lg">Search & Filters</CardTitle>
@@ -101,11 +144,7 @@ export default function DashboardPage() {
               <Button variant="outline" onClick={resetFilters} className="w-full sm:w-auto">
                 Reset
               </Button>
-              <Button
-                onClick={() => setShowComparison(true)}
-                variant="default"
-                className="w-full sm:w-auto lg:justify-self-end"
-              >
+              <Button onClick={openSheet} variant="default" className="w-full sm:w-auto lg:justify-self-end">
                 Open Compare
               </Button>
             </div>
@@ -114,18 +153,17 @@ export default function DashboardPage() {
 
         <Card className="mb-24">
           <CardContent className="p-0">
-        <StarshipsTable starships={starships} isLoading={status === 'pending'} />
-
+            <StarshipsTable starships={starships} isLoading={isPending} />
           </CardContent>
         </Card>
 
-        {/* Infinite scroll sentinel */}
+        {/* Infinite sentinel */}
         <div ref={loadMoreRef} className="h-12" />
         {isFetchingNextPage && (
           <p className="text-center py-4 text-muted-foreground">Loading more...</p>
         )}
-        <SelectedStarshipsBar onCompare={() => setShowComparison(true)} />
-        <ComparisonSheet open={showComparison} onOpenChange={setShowComparison} />
+        <SelectedStarshipsBar onCompare={openSheet} />
+        <ComparisonSheet open={showComparison} onOpenChange={(o) => (o ? openSheet() : closeSheet())} />
       </div>
     </div>
   );
