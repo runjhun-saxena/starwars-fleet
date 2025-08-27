@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { useAtom } from 'jotai';
 import {
@@ -7,32 +6,29 @@ import {
   hyperdriveFilterAtom,
   crewFilterAtom,
   currentPageAtom,
-} from '@/store/starship';;
+} from '@/store/starship';
 import { useStarships } from '@/hooks/use-starship';
 import { SearchInput } from '@/components/search-input';
-import { HyperdriveFilter, CrewFilter} from '@/components/filter';
+import { HyperdriveFilter, CrewFilter } from '@/components/filter';
 import { StarshipsTable } from '@/components/starship-table';
 import { ComparisonSheet } from '@/components/comparison-sheet';
 import { SelectedStarshipsBar } from '@/components/selected-starship';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, ChevronRight, Rocket } from 'lucide-react';
 
 export default function DashboardPage() {
-  const [search] = useAtom(searchAtom);
-  const [hyperdriveFilter] = useAtom(hyperdriveFilterAtom);
-  const [crewFilter] = useAtom(crewFilterAtom);
+  const [search, setSearch] = useAtom(searchAtom);
+  const [hyperdriveFilter, setHyperdriveFilter] = useAtom(hyperdriveFilterAtom);
+  const [crewFilter, setCrewFilter] = useAtom(crewFilterAtom);
   const [currentPage, setCurrentPage] = useAtom(currentPageAtom);
   const [showComparison, setShowComparison] = useState(false);
-
   const { data, isLoading, error } = useStarships({
     search,
     page: currentPage,
     hyperdriveFilter,
     crewFilter,
   });
-
   const handlePrevPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
@@ -46,8 +42,12 @@ export default function DashboardPage() {
   };
 
   const resetFilters = () => {
-    setCurrentPage(1);
+    setSearch('');               
+    setHyperdriveFilter('all');  
+    setCrewFilter('all');        
+    setCurrentPage(1);           
   };
+
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -57,29 +57,38 @@ export default function DashboardPage() {
               <Rocket className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Connection Error</h3>
               <p className="text-gray-600 mb-4">
-                Unable to connect to the Star Wars API. Please check your connection and try again.
+                Unable to connect to the Star Wars API. This might be due to CORS or network issues.
               </p>
-              <Button onClick={() => window.location.reload()}>
-                Retry
-              </Button>
+              <div className="text-sm text-gray-500 mb-4">
+                Error: {error?.message || 'Unknown error'}
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => window.location.reload()}>
+                  Retry
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => window.open('/api/test-swapi', '_blank')}
+                >
+                  Test API
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Rocket className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">
-              Star Wars Fleet Management
-            </h1>
-          </div>
+        <div className="mb-8 text-center">
+          <h1 className="text-5xl font-bold text-gray-900 mb-2">
+            Star Wars Fleet Dashboard
+          </h1>
           <p className="text-gray-600">
-            Search, filter, and compare starships from the Star Wars universe
+            Search and compare starships from the Star Wars universe
           </p>
         </div>
         <Card className="mb-6">
@@ -99,6 +108,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+
         {data && (
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-600">
@@ -139,9 +149,7 @@ export default function DashboardPage() {
             />
           </CardContent>
         </Card>
-
         <SelectedStarshipsBar onCompare={() => setShowComparison(true)} />
-
         <ComparisonSheet
           open={showComparison}
           onOpenChange={setShowComparison}

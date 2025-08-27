@@ -62,10 +62,10 @@ export function StarshipsTable({ starships, isLoading }: StarshipsTableProps) {
   }
 
   return (
-    <div className="border rounded-lg">
+    <div className="border rounded-lg px-6">
       <Table>
-        <TableHeader>
-          <TableRow>
+        <TableHeader >
+          <TableRow >
             <TableHead className="w-12">Select</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Model</TableHead>
