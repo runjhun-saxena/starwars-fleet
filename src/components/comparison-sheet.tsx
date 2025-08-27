@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useAtom } from 'jotai';
-import { selectedStarshipsAtom, showComparisonModalAtom } from '@/store/starship';
+import { selectedStarshipsAtom} from '@/store/starship';
 import type { Starship } from '@/lib/api';
 import { motion } from 'framer-motion';
 

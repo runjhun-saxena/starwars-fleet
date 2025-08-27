@@ -16,6 +16,8 @@ import { SelectedStarshipsBar } from '@/components/selected-starship';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Rocket } from 'lucide-react';
+import { ThemeToggle } from "@/components/theme-toggle";
+
 
 export default function DashboardPage() {
   const [search, setSearch] = useAtom(searchAtom);
@@ -81,16 +83,19 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-2">
+  <div className="min-h-screen px-4 bg-gray-50 dark:bg-background">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="mb-8 flex items-center justify-between">
+        <div className="text-center sm:text-left">
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-foreground mb-2">
             Star Wars Fleet Dashboard
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-muted-foreground">
             Search and compare starships from the Star Wars universe
           </p>
         </div>
+        <ThemeToggle />
+      </div>
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Search & Filters</CardTitle>
@@ -141,15 +146,15 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <Card>
-          <CardContent className="p-0">
+        <Card >
+          <CardContent className="p-0 ">
             <StarshipsTable 
               starships={data?.results || []} 
               isLoading={isLoading}
             />
           </CardContent>
         </Card>
-        <SelectedStarshipsBar onCompare={() => setShowComparison(true)} />
+        <SelectedStarshipsBar  onCompare={() => setShowComparison(true)}  />
         <ComparisonSheet
           open={showComparison}
           onOpenChange={setShowComparison}
