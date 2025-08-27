@@ -12,13 +12,13 @@ export const selectedStarshipsAtom = atomWithStorage<Starship[]>('selected-stars
 export const showComparisonModalAtom = atom<boolean>(false);
 
 export const hyperdriveOptions = [
-  { value: 'all', label: 'All Ratings' },
+  { value: 'all', label: 'Ratings' },
   { value: 'fast', label: '< 1.0' },
   { value: 'medium', label: '1.0 - 2.0' },
   { value: 'slow', label: '> 2.0' },
 ];
 export const crewOptions = [
-  { value: 'all', label: 'All Crew Sizes' },
+  { value: 'all', label: 'Crew Sizes' },
   { value: 'small', label: '1-5' },
   { value: 'medium', label: '6-50' },
   { value: 'large', label: '50+' },
