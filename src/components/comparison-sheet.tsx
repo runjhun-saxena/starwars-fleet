@@ -106,7 +106,7 @@ export function ComparisonSheet({ open, onOpenChange }: ComparisonSheetProps) {
           <div className="flex flex-col items-center justify-center h-64 gap-3">
             <p className="text-muted-foreground">No starships selected for comparison</p>
             <div className="text-xs text-muted-foreground">
-              Tip: Use the "Compare" button on a card to add it here.
+              Tip: Use the Compare button on a card to add it here.
             </div>
           </div>
         ) : (
