@@ -20,6 +20,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/react-query": "^3.52.1",
+    "axios": "^1.11.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.12",
@@ -31,7 +32,7 @@
     "react-dom": "19.1.0",
     "tailwind-merge": "^3.3.1",
     "use-debounce": "^10.0.5",
-    "zod": "^4.1.3"
+    "zod": "^3.23"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

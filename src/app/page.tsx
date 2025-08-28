@@ -17,7 +17,7 @@ import { StarshipsTable } from '@/components/starship-table';
 import { ComparisonSheet } from '@/components/comparison-sheet';
 import { SelectedStarshipsBar } from '@/components/selected-starship';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent} from '@/components/ui/card';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
@@ -52,7 +52,6 @@ function DashboardContent() {
   const starships = data?.pages.flatMap((p) => p.results) ?? [];
   useEffect(() => {
     if (!starships.length) return;
-
     const dict = new Map(starships.map((s) => [s.url, s]));
     const hydrated = selectedUrls
       .map((u) => dict.get(u))
@@ -67,7 +66,6 @@ function DashboardContent() {
 
   // Push atoms URL (search, filters, sort, selected)
   useSyncUrl();
-
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!loadMoreRef.current || !hasNextPage) return;
@@ -177,7 +175,7 @@ function DashboardContent() {
           </CardContent>
         </Card>
 
-        <Card className="mb-24">
+        <Card className="mb-15">
           <CardContent className="p-0">
             <StarshipsTable starships={starships} isLoading={isPending} />
           </CardContent>
