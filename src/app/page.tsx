@@ -102,7 +102,7 @@ function DashboardContent() {
         <Card className="w-full max-w-lg">
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              Failed to load starships. Please try again.
+              The Force is not with us right now. Failed to load starships. Try again later, you must.
             </p>
           </CardContent>
         </Card>
