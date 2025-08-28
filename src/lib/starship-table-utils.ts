@@ -20,8 +20,8 @@ export const getHyperdriveBadgeVariant = (rating: string): BadgeVariant => {
   const num = parseFloat(rating)
   if (Number.isNaN(num)) return 'secondary' 
   if (num < 1.0) return 'default'        
-  if (num <= 2.0) return 'outline'        
-  return 'success'                     
+  if (num <= 2.0) return 'default'        
+  return 'default'                     
 }
 
 export const hyperdriveSort: SortingFn<Starship> = (rowA, rowB) => {

@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect, useRef, useState, Suspense ,useMemo} from 'react';
 import { useAtom } from 'jotai';
 import {
@@ -26,7 +25,7 @@ function DashboardContent() {
   const [hyperdriveFilter, setHyperdriveFilter] = useAtom(hyperdriveFilterAtom);
   const [crewFilter, setCrewFilter] = useAtom(crewFilterAtom);
   const [selectedStarships, setSelectedStarships] = useAtom(selectedStarshipsAtom);
-  const [selectedUrls, setSelectedUrls] = useAtom(selectedUrlsAtom);
+  const [selectedUrls] = useAtom(selectedUrlsAtom);
 
   useRestoreFromUrl();
 

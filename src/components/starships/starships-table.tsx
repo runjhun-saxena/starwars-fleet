@@ -1,5 +1,5 @@
 'use client'
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useAtom } from 'jotai'
 import {
   selectedStarshipsAtom,
@@ -26,12 +26,15 @@ type Props = {
 
 export function StarshipsTable({ starships, isLoading }: Props) {
   const [selectedStarships, setSelectedStarships] = useAtom(selectedStarshipsAtom)
-  const [selectedUrls, setSelectedUrls] = useAtom(selectedUrlsAtom)
+  const [, setSelectedUrls] = useAtom(selectedUrlsAtom)
   const [sort, setSort] = useAtom(sortAtom)
 
-  const isSelected = (s: Starship) => selectedStarships.some((x) => x.url === s.url)
+  const isSelected = useCallback((s: Starship) => 
+    selectedStarships.some((x) => x.url === s.url), 
+    [selectedStarships]
+  )
 
-  const addSelection = (s: Starship) => {
+  const addSelection = useCallback((s: Starship) => {
     if (!s.url) return
     setSelectedStarships((prev) => {
       if (prev.some((x) => x.url === s.url)) return prev
@@ -43,18 +46,18 @@ export function StarshipsTable({ starships, isLoading }: Props) {
       if (prev.length >= 3) return prev
       return [...prev, s.url!]
     })
-  }
+  }, [setSelectedStarships, setSelectedUrls])
 
-  const removeSelection = (s: Starship) => {
+  const removeSelection = useCallback((s: Starship) => {
     if (!s.url) return
     setSelectedStarships((prev) => prev.filter((x) => x.url !== s.url))
     setSelectedUrls((prev) => prev.filter((u) => u !== s.url))
-  }
+  }, [setSelectedStarships, setSelectedUrls])
 
-  const handleSelection = (s: Starship, checked: boolean) => {
+  const handleSelection = useCallback((s: Starship, checked: boolean) => {
     if (checked) addSelection(s)
     else removeSelection(s)
-  }
+  }, [addSelection, removeSelection])
 
   // TanStack sorting state derived from jotai atom
   const sorting: SortingState = useMemo(() => {
@@ -71,7 +74,7 @@ export function StarshipsTable({ starships, isLoading }: Props) {
         handleSelection,
         selectedCount: selectedStarships.length,
       }),
-    [selectedStarships.length] 
+    [selectedStarships.length, isSelected, handleSelection] 
   )
 
   const table = useReactTable({
@@ -121,7 +124,6 @@ export function StarshipsTable({ starships, isLoading }: Props) {
         )}
       </motion.div>
 
-      {/* Desktop table */}
       <DesktopTable table={table} />
     </div>
   )

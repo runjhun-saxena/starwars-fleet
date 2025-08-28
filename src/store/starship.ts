@@ -22,7 +22,7 @@ export const sortAtom = atom<{ col?: 'hyperdrive'; dir?: SortDir }>({
 })
 
 export const hyperdriveOptions = [
-  { value: 'all', label: 'Ratings' },
+  { value: 'all', label: 'Hyperdrive' },
   { value: 'fast', label: '< 1.0' },
   { value: 'medium', label: '1.0 - 2.0' },
   { value: 'slow', label: '> 2.0' },
