@@ -1,72 +1,113 @@
-'use client'
-import { useState } from 'react'
-import { useAtom } from 'jotai'
+'use client';
+
+import { useEffect, useRef, useState, Suspense } from 'react';
+import { useAtom } from 'jotai';
 import {
   searchAtom,
   hyperdriveFilterAtom,
   crewFilterAtom,
-  currentPageAtom,
-} from '@/store/starship'
-import { useStarships } from '@/hooks/use-starship'
-import { SearchInput } from '@/components/search-input'
-import { HyperdriveFilter, CrewFilter } from '@/components/filter'
-import { StarshipsTable } from '@/components/starship-table'
-import { ComparisonSheet } from '@/components/comparison-sheet'
-import { SelectedStarshipsBar } from '@/components/selected-starship'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ChevronLeft, ChevronRight, Rocket } from 'lucide-react'
-import { ThemeToggle } from '@/components/theme-toggle'
+  selectedStarshipsAtom,
+  selectedUrlsAtom,
+} from '@/store/starship';
+import { useStarships } from '@/hooks/use-starship';
+import { useRestoreFromUrl, useSyncUrl, setSheetInUrl } from '@/hooks/use-sync-url';
+import { SearchInput } from '@/components/search-input';
+import { HyperdriveFilter, CrewFilter } from '@/components/filter';
+import { StarshipsTable } from '@/components/starship-table';
+import { ComparisonSheet } from '@/components/comparison-sheet';
+import { SelectedStarshipsBar } from '@/components/selected-starship';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-export default function DashboardPage() {
-  const [search, setSearch] = useAtom(searchAtom)
-  const [hyperdriveFilter, setHyperdriveFilter] = useAtom(hyperdriveFilterAtom)
-  const [crewFilter, setCrewFilter] = useAtom(crewFilterAtom)
-  const [currentPage, setCurrentPage] = useAtom(currentPageAtom)
-  const [showComparison, setShowComparison] = useState(false)
+function DashboardContent() {
+  const [search, setSearch] = useAtom(searchAtom);
+  const [hyperdriveFilter, setHyperdriveFilter] = useAtom(hyperdriveFilterAtom);
+  const [crewFilter, setCrewFilter] = useAtom(crewFilterAtom);
+  const [selectedStarships, setSelectedStarships] = useAtom(selectedStarshipsAtom);
+  const [selectedUrls, setSelectedUrls] = useAtom(selectedUrlsAtom);
 
-  const { data, isLoading, error } = useStarships({
-    search,
-    page: currentPage,
-    hyperdriveFilter,
-    crewFilter,
-  })
+  useRestoreFromUrl();
 
-  const handlePrevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1)
-  const handleNextPage = () => data?.next && setCurrentPage(currentPage + 1)
+  const [showComparison, setShowComparison] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const sp = useSearchParams();
+
+  useEffect(() => {
+    setShowComparison(sp.get('sheet') === '1');
+  }, [sp]);
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isPending,
+    isError,
+  } = useStarships({ search, hyperdriveFilter, crewFilter });
+
+  // Flatten pages
+  const starships = data?.pages.flatMap((p) => p.results) ?? [];
+  useEffect(() => {
+    if (!starships.length) return;
+
+    const dict = new Map(starships.map((s) => [s.url, s]));
+    const hydrated = selectedUrls
+      .map((u) => dict.get(u))
+      .filter(Boolean)
+      .slice(0, 3) as typeof starships;
+    const oldUrls = selectedStarships.map((s) => s.url).join('|');
+    const newUrls = hydrated.map((s) => s.url).join('|');
+    if (oldUrls !== newUrls) {
+      setSelectedStarships(hydrated);
+    }
+  }, [starships, selectedUrls, selectedStarships, setSelectedStarships]);
+
+  // Push atoms URL (search, filters, sort, selected)
+  useSyncUrl();
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage) return;
+    const ob = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage) fetchNextPage();
+      },
+      { threshold: 1 }
+    );
+    ob.observe(loadMoreRef.current);
+    return () => ob.disconnect();
+  }, [fetchNextPage, hasNextPage]);
+
+  const openSheet = () => {
+    setShowComparison(true);
+    setSheetInUrl(true, sp, pathname, router);
+  };
+  const closeSheet = () => {
+    setShowComparison(false);
+    setSheetInUrl(false, sp, pathname, router);
+  };
 
   const resetFilters = () => {
-    setSearch('')
-    setHyperdriveFilter('all')
-    setCrewFilter('all')
-    setCurrentPage(1)
-  }
+    setSearch('');
+    setHyperdriveFilter('all');
+    setCrewFilter('all');
+  };
 
-  if (error) {
+  if (isError) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg bg-card text-card-foreground border border-border">
+        <Card className="w-full max-w-lg">
           <CardContent className="pt-6">
-            <div className="text-center">
-              <Rocket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Connection Error</h3>
-              <p className="text-muted-foreground mb-4">
-                Unable to connect to the Star Wars API. This might be due to CORS or network issues.
-              </p>
-              <div className="text-xs sm:text-sm text-muted-foreground mb-4 break-all">
-                Error: {error?.message || 'Unknown error'}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button onClick={() => window.location.reload()}>Retry</Button>
-                <Button variant="outline" onClick={() => window.open('/api/test-swapi', '_blank')}>
-                  Test API
-                </Button>
-              </div>
-            </div>
+            <p className="text-center text-muted-foreground">
+              Failed to load starships. Please try again.
+            </p>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -77,69 +118,91 @@ export default function DashboardPage() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground mb-1">
               Star Wars Fleet Dashboard
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Search and compare starships from the Star Wars universe
-            </p>
+  <p className="text-sm sm:text-base text-muted-foreground">
+    Select and compare starships from the Star Wars universe
+  </p>
           </div>
           <div className="justify-self-center sm:justify-self-end">
             <ThemeToggle />
           </div>
         </div>
 
-        <Card className="mb-4 sm:mb-6">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-base sm:text-lg">Search & Filters</CardTitle>
-          </CardHeader>
+<Card className="mb-4 sm:mb-6">
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto] gap-3 sm:gap-4 items-end">
+            {/* Mobile Layout */}
+            <div className="grid grid-cols-1 sm:hidden gap-3">
               <div className="min-w-0">
                 <SearchInput />
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <HyperdriveFilter />
                 <CrewFilter />
               </div>
-              <Button variant="outline" onClick={resetFilters} className="w-full sm:w-auto">
+              <Button variant="outline" onClick={resetFilters} className="w-full">
                 Reset
               </Button>
-              <Button
-                onClick={() => setShowComparison(true)}
-                variant="default"
-                className="w-full sm:w-auto lg:justify-self-end"
-              >
-                Open Compare
-              </Button>
             </div>
+            
+            {/* Tablet Layout */}
+            <div className="hidden sm:grid lg:hidden grid-cols-2 gap-4 items-end">
+              <div className="min-w-0">
+                <SearchInput />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <HyperdriveFilter />
+                <CrewFilter />
+                <Button variant="outline" onClick={resetFilters} className="w-full">
+                  Reset
+                </Button>
+              </div>
+            </div>
+            
+            {/* Desktop Layout */}
+<div className="hidden lg:flex justify-between items-end w-full">
+  <div className="flex-1 max-w-md">
+    <SearchInput />
+  </div>
+  <div className="flex gap-6 items-end">
+    <div className="w-40">
+      <HyperdriveFilter />
+    </div>
+    <div className="w-40">
+      <CrewFilter />
+    </div>
+    <Button variant="outline" onClick={resetFilters} className="whitespace-nowrap">
+      Reset Filters
+    </Button>
+  </div>
+</div>
           </CardContent>
         </Card>
-        {data && (
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3 sm:mb-4">
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">
-              Showing {data.results.length} starships{search && ` matching "${search}"`}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={handlePrevPage} disabled={currentPage === 1} aria-label="Previous page">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-xs sm:text-sm text-muted-foreground px-1 sm:px-2">Page {currentPage}</span>
-              <Button variant="outline" size="icon" onClick={handleNextPage} disabled={!data.next} aria-label="Next page">
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
 
-     
         <Card className="mb-24">
           <CardContent className="p-0">
-            <StarshipsTable starships={data?.results || []} isLoading={isLoading} />
+            <StarshipsTable starships={starships} isLoading={isPending} />
           </CardContent>
         </Card>
 
-       
-        <SelectedStarshipsBar onCompare={() => setShowComparison(true)} />
-        <ComparisonSheet open={showComparison} onOpenChange={setShowComparison} />
+        {/* Infinite sentinel */}
+        <div ref={loadMoreRef} className="h-12" />
+        {isFetchingNextPage && (
+          <p className="text-center py-4 text-muted-foreground">Loading more...</p>
+        )}
+        <SelectedStarshipsBar onCompare={openSheet} />
+        <ComparisonSheet open={showComparison} onOpenChange={(o) => (o ? openSheet() : closeSheet())} />
       </div>
     </div>
-  )
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
+  );
 }

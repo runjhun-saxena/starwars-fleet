@@ -4,20 +4,27 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { X, Eye } from 'lucide-react'
 import { useAtom } from 'jotai'
-import { selectedStarshipsAtom } from '@/store/starship'
+import { selectedStarshipsAtom, selectedUrlsAtom } from '@/store/starship'
 import type { Starship } from '@/lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface SelectedStarshipsBarProps {
   onCompare: () => void
 }
+
 export function SelectedStarshipsBar({ onCompare }: SelectedStarshipsBarProps) {
   const [selectedStarships, setSelectedStarships] = useAtom(selectedStarshipsAtom)
+  const [, setSelectedUrls] = useAtom(selectedUrlsAtom)
 
-  const removeStarship = (starshipToRemove: Starship) => {
-    setSelectedStarships(prev => prev.filter(s => s.url !== starshipToRemove.url))
+  const removeStarship = (s: Starship) => {
+    setSelectedStarships(prev => prev.filter(x => x.url !== s.url))
+    setSelectedUrls(prev => prev.filter(u => u !== s.url))
   }
-  const clearAll = () => setSelectedStarships([])
+
+  const clearAll = () => {
+    setSelectedStarships([])
+    setSelectedUrls([])
+  }
 
   if (selectedStarships.length === 0) return null
 
