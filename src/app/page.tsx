@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, Suspense } from 'react';
+import { useEffect, useRef, useState, Suspense ,useMemo} from 'react';
 import { useAtom } from 'jotai';
 import {
   searchAtom,
@@ -13,13 +13,13 @@ import { useStarships } from '@/hooks/use-starship';
 import { useRestoreFromUrl, useSyncUrl, setSheetInUrl } from '@/hooks/use-sync-url';
 import { SearchInput } from '@/components/search-input';
 import { HyperdriveFilter, CrewFilter } from '@/components/filter';
-import { StarshipsTable } from '@/components/starship-table';
 import { ComparisonSheet } from '@/components/comparison-sheet';
 import { SelectedStarshipsBar } from '@/components/selected-starship';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { StarshipsTable } from '@/components/starships/starships-table';
 
 function DashboardContent() {
   const [search, setSearch] = useAtom(searchAtom);
@@ -48,8 +48,10 @@ function DashboardContent() {
     isError,
   } = useStarships({ search, hyperdriveFilter, crewFilter });
 
-  // Flatten pages
-  const starships = data?.pages.flatMap((p) => p.results) ?? [];
+  // Flat pages
+  const starships = useMemo(() => {
+  return data?.pages.flatMap((p) => p.results) ?? [];
+}, [data?.pages]);
   useEffect(() => {
     if (!starships.length) return;
     const dict = new Map(starships.map((s) => [s.url, s]));
@@ -116,16 +118,16 @@ function DashboardContent() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground mb-1">
               Star Wars Fleet Dashboard
             </h1>
-  <p className="text-sm sm:text-base text-muted-foreground">
-    Select and compare starships from the Star Wars universe
-  </p>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Select and compare starships from the Star Wars universe
+            </p>
           </div>
           <div className="justify-self-center sm:justify-self-end">
             <ThemeToggle />
           </div>
         </div>
 
-<Card className="mb-4 sm:mb-6">
+        <Card className="mb-4 sm:mb-6">
           <CardContent>
             {/* Mobile Layout */}
             <div className="grid grid-cols-1 sm:hidden gap-3">
@@ -140,7 +142,7 @@ function DashboardContent() {
                 Reset
               </Button>
             </div>
-            
+
             {/* Tablet Layout */}
             <div className="hidden sm:grid lg:hidden grid-cols-2 gap-4 items-end">
               <div className="min-w-0">
@@ -154,24 +156,24 @@ function DashboardContent() {
                 </Button>
               </div>
             </div>
-            
+
             {/* Desktop Layout */}
-<div className="hidden lg:flex justify-between items-end w-full">
-  <div className="flex-1 max-w-md">
-    <SearchInput />
-  </div>
-  <div className="flex gap-6 items-end">
-    <div className="w-40">
-      <HyperdriveFilter />
-    </div>
-    <div className="w-40">
-      <CrewFilter />
-    </div>
-    <Button variant="outline" onClick={resetFilters} className="whitespace-nowrap">
-      Reset Filters
-    </Button>
-  </div>
-</div>
+            <div className="hidden lg:flex justify-between items-end w-full">
+              <div className="flex-1 max-w-md">
+                <SearchInput />
+              </div>
+              <div className="flex gap-6 items-end">
+                <div className="w-40">
+                  <HyperdriveFilter />
+                </div>
+                <div className="w-40">
+                  <CrewFilter />
+                </div>
+                <Button variant="outline" onClick={resetFilters} className="whitespace-nowrap">
+                  Reset Filters
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

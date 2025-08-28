@@ -24,7 +24,6 @@ export async function getStarshipsPageViaTsRest(
       throw new Error(`Unexpected status ${res.status}`);
     } catch (e) {
       lastErr = e;
-      // try next mirror
     }
   }
   throw new Error(
