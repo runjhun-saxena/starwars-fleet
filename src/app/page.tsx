@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { useAtom } from 'jotai';
 import {
   searchAtom,
@@ -21,24 +21,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [search, setSearch] = useAtom(searchAtom);
   const [hyperdriveFilter, setHyperdriveFilter] = useAtom(hyperdriveFilterAtom);
   const [crewFilter, setCrewFilter] = useAtom(crewFilterAtom);
   const [selectedStarships, setSelectedStarships] = useAtom(selectedStarshipsAtom);
   const [selectedUrls, setSelectedUrls] = useAtom(selectedUrlsAtom);
 
- 
   useRestoreFromUrl();
 
   const [showComparison, setShowComparison] = useState(false);
   const pathname = usePathname();
-  const router   = useRouter();
-  const sp       = useSearchParams();
+  const router = useRouter();
+  const sp = useSearchParams();
 
   useEffect(() => {
     setShowComparison(sp.get('sheet') === '1');
-  }, []);
+  }, [sp]);
 
   const {
     data,
@@ -71,7 +70,7 @@ export default function DashboardPage() {
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    if (!loadMoreRef.current) return;
+    if (!loadMoreRef.current || !hasNextPage) return;
     const ob = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasNextPage) fetchNextPage();
@@ -119,35 +118,62 @@ export default function DashboardPage() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground mb-1">
               Star Wars Fleet Dashboard
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Search and compare starships from the Star Wars universe
-            </p>
+  <p className="text-sm sm:text-base text-muted-foreground">
+    Select and compare starships from the Star Wars universe
+  </p>
           </div>
           <div className="justify-self-center sm:justify-self-end">
             <ThemeToggle />
           </div>
         </div>
 
-        <Card className="mb-4 sm:mb-6">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-base sm:text-lg">Search & Filters</CardTitle>
-          </CardHeader>
+<Card className="mb-4 sm:mb-6">
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto] gap-3 sm:gap-4 items-end">
+            {/* Mobile Layout */}
+            <div className="grid grid-cols-1 sm:hidden gap-3">
               <div className="min-w-0">
                 <SearchInput />
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <HyperdriveFilter />
                 <CrewFilter />
               </div>
-              <Button variant="outline" onClick={resetFilters} className="w-full sm:w-auto">
+              <Button variant="outline" onClick={resetFilters} className="w-full">
                 Reset
               </Button>
-              <Button onClick={openSheet} variant="default" className="w-full sm:w-auto lg:justify-self-end">
-                Open Compare
-              </Button>
             </div>
+            
+            {/* Tablet Layout */}
+            <div className="hidden sm:grid lg:hidden grid-cols-2 gap-4 items-end">
+              <div className="min-w-0">
+                <SearchInput />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <HyperdriveFilter />
+                <CrewFilter />
+                <Button variant="outline" onClick={resetFilters} className="w-full">
+                  Reset
+                </Button>
+              </div>
+            </div>
+            
+            {/* Desktop Layout */}
+<div className="hidden lg:flex justify-between items-end w-full">
+  <div className="flex-1 max-w-md">
+    <SearchInput />
+  </div>
+  <div className="flex gap-6 items-end">
+    <div className="w-40">
+      <HyperdriveFilter />
+    </div>
+    <div className="w-40">
+      <CrewFilter />
+    </div>
+    <Button variant="outline" onClick={resetFilters} className="whitespace-nowrap">
+      Reset Filters
+    </Button>
+  </div>
+</div>
           </CardContent>
         </Card>
 
@@ -166,5 +192,17 @@ export default function DashboardPage() {
         <ComparisonSheet open={showComparison} onOpenChange={(o) => (o ? openSheet() : closeSheet())} />
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }
