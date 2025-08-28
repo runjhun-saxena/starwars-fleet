@@ -48,9 +48,8 @@ export function useRestoreFromUrl() {
     } else {
       setSel([]);
     }
-  }, []); 
+  }, [sp, setSearch, setHyper, setCrew, setSort, setSel]); 
 }
-
 
 export function useSyncUrl() {
   const router   = useRouter();
@@ -74,7 +73,7 @@ export function useSyncUrl() {
     if (sel.length) params.set('selected', sel.join(','));
 
     const next = params.toString();
-    if (next === last.current) return; // no-op
+    if (next === last.current) return; 
 
     last.current = next;
     const url = next ? `${pathname}?${next}` : pathname;
