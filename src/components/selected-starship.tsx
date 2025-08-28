@@ -53,7 +53,7 @@ export function SelectedStarshipsBar({ onCompare }: SelectedStarshipsBarProps) {
                     {starship.name}
                     <Button
                       variant="ghost" size="sm"
-                      className="h-4 w-4 p-0 ml-1 hover:bg-destructive hover:text-destructive-foreground"
+                      className="h-4 w-4 p-0 ml-1  hover:text-destructive-foreground"
                       onClick={() => removeStarship(starship)}
                       aria-label={`Remove ${starship.name}`}
                     >

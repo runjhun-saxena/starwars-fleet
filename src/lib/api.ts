@@ -1,4 +1,3 @@
-// lib/api.ts
 export type { Starship, StarshipsResponse } from './swapi';
 import type { StarshipsResponse } from './swapi';
 import { getStarshipsPageViaTsRest } from './tsrest-client';
