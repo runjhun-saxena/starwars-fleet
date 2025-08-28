@@ -51,6 +51,7 @@ function DashboardContent() {
   const starships = useMemo(() => {
   return data?.pages.flatMap((p) => p.results) ?? [];
 }, [data?.pages]);
+
   useEffect(() => {
     if (!starships.length) return;
     const dict = new Map(starships.map((s) => [s.url, s]));
